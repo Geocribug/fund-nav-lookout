@@ -160,7 +160,8 @@
     addText(right, `高点 ${fund.highNav.toFixed(4)} · ${elapsedDays}天前`, Font.systemFont(isLargeWidget ? 10 : 9), new Color("#77817c"));
   });
 
-  widget.addSpacer();
+  // 固定底部呼吸感，避免大型组件把剩余高度全部留白。
+  widget.addSpacer(isLargeWidget ? 10 : 8);
   addText(widget, `数据源：天天基金 · ${TRADING_DAYS} 个交易日`, Font.systemFont(isLargeWidget ? 9 : 9), new Color("#949b96"));
   widget.refreshAfterDate = new Date(Date.now() + REFRESH_HOURS * 60 * 60 * 1000);
   Script.setWidget(widget);
