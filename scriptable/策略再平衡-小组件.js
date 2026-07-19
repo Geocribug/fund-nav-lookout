@@ -5,6 +5,7 @@
   try {
     const OFF_HOURS_REFRESH_HOURS = 6;
     const PLAN_COLUMN_WIDTH = 68;
+    const STATUS_COLUMN_WIDTH = 74;
     const fileManager = FileManager.local();
     const configPath = fileManager.joinPath(fileManager.documentsDirectory(), "fund-nav-lookout-strategy-widget-config.json");
     const cachePath = fileManager.joinPath(fileManager.documentsDirectory(), "fund-nav-lookout-strategy-widget-nav-cache.json");
@@ -176,9 +177,11 @@
     const amountLine = widget.addStack();
     amountLine.layoutHorizontally();
     addText(amountLine, headlineMoney(strategy.amount), Font.boldSystemFont(16), new Color("#283632"));
-    amountLine.addSpacer(5);
+    amountLine.addSpacer();
+    const performanceBox = amountLine.addStack();
+    performanceBox.size = new Size(STATUS_COLUMN_WIDTH, 0);
     const performanceText = stats.dailyChange === null ? "待同步" : `${stats.dailyChange >= 0 ? "+" : ""}${stats.dailyChange.toFixed(2)}%`;
-    addText(amountLine, performanceText, Font.boldSystemFont(16), stats.dailyChange === null ? new Color("#87908b") : new Color(stats.dailyChange >= 0 ? "#578a7c" : "#c45e50"));
+    addCenteredText(performanceBox, performanceText, Font.boldSystemFont(16), stats.dailyChange === null ? new Color("#87908b") : new Color(stats.dailyChange >= 0 ? "#578a7c" : "#c45e50"));
 
     const position = widget.addStack();
     position.layoutHorizontally();
@@ -186,7 +189,9 @@
     const positionColor = new Color(Math.abs(deviation) <= 0.05 ? "#578a7c" : deviation < 0 ? "#c58a2e" : "#c45e50");
     addText(position, positionText, Font.boldSystemFont(11), positionColor);
     position.addSpacer();
-    addText(position, `${actualWeight.toFixed(1)}% → ${targetWeight.toFixed(1)}%`, Font.systemFont(9), new Color("#77817c"));
+    const allocationBox = position.addStack();
+    allocationBox.size = new Size(STATUS_COLUMN_WIDTH, 0);
+    addCenteredText(allocationBox, `${actualWeight.toFixed(1)}% → ${targetWeight.toFixed(1)}%`, Font.systemFont(9), new Color("#77817c"));
     widget.addSpacer(11);
 
     const planLabels = widget.addStack();
