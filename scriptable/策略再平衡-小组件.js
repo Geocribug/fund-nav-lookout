@@ -4,6 +4,7 @@
 (async () => {
   try {
     const REFRESH_HOURS = 6;
+    const PLAN_COLUMN_WIDTH = 68;
     const fileManager = FileManager.local();
     const configPath = fileManager.joinPath(fileManager.documentsDirectory(), "fund-nav-lookout-strategy-widget-config.json");
     const cachePath = fileManager.joinPath(fileManager.documentsDirectory(), "fund-nav-lookout-strategy-widget-nav-cache.json");
@@ -33,6 +34,12 @@
       label.textColor = color;
       label.lineLimit = lineLimit;
       label.minimumScaleFactor = 0.68;
+      return label;
+    }
+
+    function addCenteredText(parent, text, font, color, lineLimit = 1) {
+      const label = addText(parent, text, font, color, lineLimit);
+      label.centerAlignText();
       return label;
     }
 
@@ -172,15 +179,19 @@
     const plans = widget.addStack();
     plans.layoutHorizontally();
     const newCapitalBox = plans.addStack();
+    newCapitalBox.size = new Size(PLAN_COLUMN_WIDTH, 0);
     newCapitalBox.layoutVertically();
-    addText(newCapitalBox, "增资补足", Font.systemFont(9), new Color("#87908b"));
-    addText(newCapitalBox, newCapital > 0.005 ? compactMoney(newCapital) : "无需新增", Font.boldSystemFont(13), new Color("#c58a2e"));
+    newCapitalBox.centerAlignContent();
+    addCenteredText(newCapitalBox, "增资补足", Font.systemFont(9), new Color("#87908b"));
+    addCenteredText(newCapitalBox, newCapital > 0.005 ? compactMoney(newCapital) : "无需新增", Font.boldSystemFont(13), new Color("#c58a2e"));
     plans.addSpacer();
     const transferBox = plans.addStack();
+    transferBox.size = new Size(PLAN_COLUMN_WIDTH, 0);
     transferBox.layoutVertically();
-    addText(transferBox, "内部调仓", Font.systemFont(9), new Color("#87908b"));
+    transferBox.centerAlignContent();
+    addCenteredText(transferBox, "内部调仓", Font.systemFont(9), new Color("#87908b"));
     const transferText = Math.abs(adjustment) <= 0.005 ? "无需调仓" : `${adjustment > 0 ? "买入" : "卖出"} ${compactMoney(adjustment)}`;
-    addText(transferBox, transferText, Font.boldSystemFont(13), new Color(adjustment > 0.005 ? "#c58a2e" : adjustment < -0.005 ? "#c45e50" : "#578a7c"));
+    addCenteredText(transferBox, transferText, Font.boldSystemFont(13), new Color(adjustment > 0.005 ? "#c58a2e" : adjustment < -0.005 ? "#c45e50" : "#578a7c"));
 
     widget.addSpacer(9);
     addText(widget, `自动更新 · ${REFRESH_HOURS} 小时缓存`, Font.systemFont(7), new Color("#9aa19d"));
