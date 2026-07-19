@@ -142,43 +142,53 @@
 
     const widget = new ListWidget();
     widget.backgroundColor = new Color("#fbf8f1");
-    widget.setPadding(12, 13, 11, 13);
+    widget.setPadding(13, 14, 12, 14);
 
     const heading = widget.addStack();
     heading.layoutHorizontally();
-    addText(heading, strategy.name, Font.boldSystemFont(15), new Color("#22312d"));
+    addText(heading, strategy.name, Font.boldSystemFont(16), new Color("#22312d"));
     heading.addSpacer();
     addText(heading, `${stats.count} 只基金`, Font.systemFont(9), new Color("#77817c"));
-    widget.addSpacer(3);
-
-    addText(widget, "基金总额", Font.systemFont(8), new Color("#87908b"));
-    addText(widget, money(strategy.amount), Font.boldSystemFont(17), new Color("#283632"));
-    addText(widget, `当前 ${actualWeight.toFixed(1)}% · 目标 ${targetWeight.toFixed(1)}% · ${deviation >= 0 ? "+" : ""}${deviation.toFixed(1)}pp`, Font.systemFont(8), new Color("#77817c"));
     widget.addSpacer(5);
+
+    const overview = widget.addStack();
+    overview.layoutHorizontally();
+    const amountBox = overview.addStack();
+    amountBox.layoutVertically();
+    addText(amountBox, "基金总额", Font.systemFont(8), new Color("#87908b"));
+    addText(amountBox, money(strategy.amount), Font.boldSystemFont(17), new Color("#283632"));
+    overview.addSpacer();
+    const positionBox = overview.addStack();
+    positionBox.layoutVertically();
+    const positionText = Math.abs(deviation) <= 0.05 ? "仓位平衡" : `${deviation < 0 ? "低配" : "超配"} ${Math.abs(deviation).toFixed(1)}pp`;
+    const positionColor = new Color(Math.abs(deviation) <= 0.05 ? "#578a7c" : deviation < 0 ? "#c58a2e" : "#c45e50");
+    addText(positionBox, positionText, Font.boldSystemFont(11), positionColor);
+    addText(positionBox, `当前 ${actualWeight.toFixed(1)}% / 目标 ${targetWeight.toFixed(1)}%`, Font.systemFont(7), new Color("#77817c"));
+    widget.addSpacer(7);
 
     const performance = widget.addStack();
     performance.layoutHorizontally();
-    addText(performance, "组合加权净值涨跌", Font.systemFont(9), new Color("#68736e"));
+    addText(performance, "今日加权净值涨跌", Font.systemFont(10), new Color("#68736e"));
     performance.addSpacer();
     const performanceText = stats.dailyChange === null ? "待同步" : `${stats.dailyChange >= 0 ? "+" : ""}${stats.dailyChange.toFixed(2)}%`;
-    addText(performance, performanceText, Font.boldSystemFont(13), stats.dailyChange === null ? new Color("#87908b") : new Color(stats.dailyChange >= 0 ? "#578a7c" : "#c45e50"));
-    widget.addSpacer(7);
+    addText(performance, performanceText, Font.boldSystemFont(15), stats.dailyChange === null ? new Color("#87908b") : new Color(stats.dailyChange >= 0 ? "#578a7c" : "#c45e50"));
+    widget.addSpacer(8);
 
     const plans = widget.addStack();
     plans.layoutHorizontally();
     const newCapitalBox = plans.addStack();
     newCapitalBox.layoutVertically();
-    addText(newCapitalBox, "仅新增资金", Font.systemFont(8), new Color("#87908b"));
-    addText(newCapitalBox, newCapital > 0.005 ? compactMoney(newCapital) : "无需新增", Font.boldSystemFont(11), new Color("#c58a2e"));
+    addText(newCapitalBox, "增资补足", Font.systemFont(8), new Color("#87908b"));
+    addText(newCapitalBox, newCapital > 0.005 ? compactMoney(newCapital) : "无需新增", Font.boldSystemFont(12), new Color("#c58a2e"));
     plans.addSpacer();
     const transferBox = plans.addStack();
     transferBox.layoutVertically();
-    addText(transferBox, "不增资调仓", Font.systemFont(8), new Color("#87908b"));
+    addText(transferBox, "内部调仓", Font.systemFont(8), new Color("#87908b"));
     const transferText = Math.abs(adjustment) <= 0.005 ? "无需调仓" : `${adjustment > 0 ? "买入" : "卖出"} ${compactMoney(adjustment)}`;
-    addText(transferBox, transferText, Font.boldSystemFont(11), new Color(adjustment > 0.005 ? "#c58a2e" : adjustment < -0.005 ? "#c45e50" : "#578a7c"));
+    addText(transferBox, transferText, Font.boldSystemFont(12), new Color(adjustment > 0.005 ? "#c58a2e" : adjustment < -0.005 ? "#c45e50" : "#578a7c"));
 
     widget.addSpacer();
-    addText(widget, `净值自动更新 · ${REFRESH_HOURS} 小时缓存`, Font.systemFont(7), new Color("#9aa19d"));
+    addText(widget, `自动更新 · ${REFRESH_HOURS} 小时缓存`, Font.systemFont(7), new Color("#9aa19d"));
     widget.refreshAfterDate = new Date(Date.now() + REFRESH_HOURS * 60 * 60 * 1000);
     Script.setWidget(widget);
     Script.complete();
