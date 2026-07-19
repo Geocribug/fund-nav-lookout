@@ -3,11 +3,18 @@
 
 (async () => {
   try {
-    const REFRESH_HOURS = 6;
+    const OFF_HOURS_REFRESH_HOURS = 6;
     const PLAN_COLUMN_WIDTH = 68;
     const fileManager = FileManager.local();
     const configPath = fileManager.joinPath(fileManager.documentsDirectory(), "fund-nav-lookout-strategy-widget-config.json");
     const cachePath = fileManager.joinPath(fileManager.documentsDirectory(), "fund-nav-lookout-strategy-widget-nav-cache.json");
+
+    function refreshHours() {
+      const hour = new Date().getHours();
+      return hour >= 16 && hour < 22 ? 1 : OFF_HOURS_REFRESH_HOURS;
+    }
+
+    const activeRefreshHours = refreshHours();
 
     function readJson(path, fallback) {
       try {
@@ -71,7 +78,7 @@
 
     async function getMemberDailyChange(member, cache) {
       const cached = cache[member.code];
-      const cacheStillFresh = cached && Date.now() - cached.fetchedAt < REFRESH_HOURS * 60 * 60 * 1000;
+      const cacheStillFresh = cached && Date.now() - cached.fetchedAt < activeRefreshHours * 60 * 60 * 1000;
       if (cacheStillFresh) return { ...member, ...cached };
       try {
         const request = new Request(`https://fund.eastmoney.com/pingzhongdata/${member.code}.js?v=${Date.now()}`);
@@ -194,9 +201,9 @@
     addCenteredText(transferBox, transferText, Font.boldSystemFont(13), new Color(adjustment > 0.005 ? "#c58a2e" : adjustment < -0.005 ? "#c45e50" : "#578a7c"));
 
     widget.addSpacer(9);
-    addText(widget, `自动更新 · ${REFRESH_HOURS} 小时缓存`, Font.systemFont(7), new Color("#9aa19d"));
+    addText(widget, activeRefreshHours === 1 ? "收盘更新时段 · 每小时尝试" : `自动更新 · ${OFF_HOURS_REFRESH_HOURS} 小时缓存`, Font.systemFont(7), new Color("#9aa19d"));
     widget.addSpacer();
-    widget.refreshAfterDate = new Date(Date.now() + REFRESH_HOURS * 60 * 60 * 1000);
+    widget.refreshAfterDate = new Date(Date.now() + activeRefreshHours * 60 * 60 * 1000);
     Script.setWidget(widget);
     Script.complete();
   } catch (error) {
