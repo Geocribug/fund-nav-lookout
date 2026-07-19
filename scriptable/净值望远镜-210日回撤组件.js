@@ -103,7 +103,7 @@
     return;
   }
 
-  const parameter = String(args.widgetParameter || "holding").trim().toLowerCase();
+  const parameter = String(args.widgetParameter || "holding").trim().toLowerCase().replaceAll("，", ",");
   const [listName, requestedCodes] = parameter.split(":", 2);
   const sourceName = listName === "watch" ? "watch" : "holding";
   const sourceFunds = sourceName === "watch" ? configuration.watchlist || [] : configuration.holdings || [];
@@ -129,39 +129,39 @@
 
   const widget = new ListWidget();
   widget.backgroundColor = new Color("#fbf8f1");
-  widget.setPadding(isLargeWidget ? 10 : 12, 14, isLargeWidget ? 10 : 12, 14);
+  widget.setPadding(isLargeWidget ? 13 : 12, 15, isLargeWidget ? 12 : 12, 15);
   widget.url = APP_URL;
 
   const heading = widget.addStack();
   heading.layoutHorizontally();
-  addText(heading, sourceName === "watch" ? "观察基金" : "我的基金", Font.boldSystemFont(isLargeWidget ? 12 : 13), new Color("#22312d"));
+  addText(heading, sourceName === "watch" ? "观察基金" : "我的基金", Font.boldSystemFont(isLargeWidget ? 14 : 13), new Color("#22312d"));
   heading.addSpacer();
-  addText(heading, isLargeWidget ? "最多 7 只 · 210 日回撤" : "210 日回撤", Font.systemFont(isLargeWidget ? 9 : 11), new Color("#77817c"));
-  widget.addSpacer(isLargeWidget ? 5 : 8);
+  addText(heading, isLargeWidget ? "最多 7 只 · 210 日回撤" : "210 日回撤", Font.systemFont(isLargeWidget ? 10 : 11), new Color("#77817c"));
+  widget.addSpacer(isLargeWidget ? 8 : 8);
 
   results.forEach((fund, index) => {
-    if (index) widget.addSpacer(isLargeWidget ? 4 : 7);
+    if (index) widget.addSpacer(isLargeWidget ? 8 : 7);
     const row = widget.addStack();
     row.layoutHorizontally();
     const left = row.addStack();
     left.layoutVertically();
-    addText(left, fund.name, Font.mediumSystemFont(isSmallWidget ? 15 : isLargeWidget ? 11 : 12), new Color("#283632"));
+    addText(left, fund.name, Font.mediumSystemFont(isSmallWidget ? 15 : isLargeWidget ? 13 : 12), new Color("#283632"));
     if (fund.error) {
-      addText(left, `${fund.code} · ${fund.error}`, Font.systemFont(isLargeWidget ? 8 : 10), new Color("#9a6257"));
+      addText(left, `${fund.code} · ${fund.error}`, Font.systemFont(isLargeWidget ? 10 : 10), new Color("#9a6257"));
       return;
     }
-    addText(left, `净值 ${fund.latestNav.toFixed(4)} · ${dateText(fund.latestDate)}`, Font.systemFont(isLargeWidget ? 8 : 10), new Color("#77817c"));
+    addText(left, `${fund.code} · 净值 ${fund.latestNav.toFixed(4)} · ${dateText(fund.latestDate)}`, Font.systemFont(isLargeWidget ? 10 : 10), new Color("#77817c"));
     row.addSpacer();
     const right = row.addStack();
     right.layoutVertically();
     right.centerAlignContent();
-    addText(right, `−${fund.drawdown.toFixed(2)}%`, Font.boldSystemFont(isSmallWidget ? 24 : isLargeWidget ? 13 : 15), colorFor(fund.drawdown));
+    addText(right, `−${fund.drawdown.toFixed(2)}%`, Font.boldSystemFont(isSmallWidget ? 24 : isLargeWidget ? 17 : 15), colorFor(fund.drawdown));
     const elapsedDays = Number.isFinite(fund.highElapsedDays) ? fund.highElapsedDays : naturalDaysSince(fund.highDate, fund.latestDate);
-    addText(right, `高点 ${fund.highNav.toFixed(4)} · ${elapsedDays}天前`, Font.systemFont(isLargeWidget ? 8 : 9), new Color("#77817c"));
+    addText(right, `高点 ${fund.highNav.toFixed(4)} · ${elapsedDays}天前`, Font.systemFont(isLargeWidget ? 10 : 9), new Color("#77817c"));
   });
 
   widget.addSpacer();
-  addText(widget, `数据源：天天基金 · ${TRADING_DAYS} 个交易日`, Font.systemFont(isLargeWidget ? 8 : 9), new Color("#949b96"));
+  addText(widget, `数据源：天天基金 · ${TRADING_DAYS} 个交易日`, Font.systemFont(isLargeWidget ? 9 : 9), new Color("#949b96"));
   widget.refreshAfterDate = new Date(Date.now() + REFRESH_HOURS * 60 * 60 * 1000);
   Script.setWidget(widget);
   if (!config.runsInWidget) {
