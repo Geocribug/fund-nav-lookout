@@ -122,7 +122,6 @@
   summary.addSpacer();
   const transferBox = summary.addStack();
   transferBox.layoutVertically();
-  transferBox.rightAlignContent();
   addText(transferBox, "不增资调仓", Font.systemFont(9), new Color("#77817c"));
   addText(transferBox, totalTransfer > 0.005 ? money(totalTransfer) : "无需调仓", Font.boldSystemFont(13), new Color("#c45e50"));
   widget.addSpacer(8);
@@ -138,7 +137,6 @@
     row.addSpacer();
     const right = row.addStack();
     right.layoutVertically();
-    right.rightAlignContent();
     const deviationText = `${strategy.deviation >= 0 ? "+" : ""}${strategy.deviation.toFixed(1)}pp`;
     addText(right, deviationText, Font.boldSystemFont(14), colorFor(strategy.status, strategy.deviation));
     const newCapitalText = strategy.newCapital > 0.005 ? `新增 ${money(strategy.newCapital)}` : "新增无需";
