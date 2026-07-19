@@ -5,6 +5,24 @@
   const fileManager = FileManager.local();
   const configPath = fileManager.joinPath(fileManager.documentsDirectory(), "fund-nav-lookout-strategy-widget-config.json");
 
+  // 配置脚本需要文件选择与金额输入，不能作为桌面组件运行。
+  if (typeof config !== "undefined" && config.runsInWidget) {
+    const widget = new ListWidget();
+    widget.backgroundColor = new Color("#fbf8f1");
+    widget.setPadding(16, 16, 16, 16);
+    const title = widget.addText("策略再平衡配置");
+    title.font = Font.boldSystemFont(15);
+    title.textColor = new Color("#22312d");
+    widget.addSpacer(8);
+    const message = widget.addText("这是配置脚本，请在 Scriptable App 内手动运行；桌面组件请选择“策略再平衡-组件”。");
+    message.font = Font.systemFont(12);
+    message.textColor = new Color("#68736e");
+    message.lineLimit = 3;
+    Script.setWidget(widget);
+    Script.complete();
+    return;
+  }
+
   function readJson(path, fallback) {
     try {
       return fileManager.fileExists(path) ? JSON.parse(fileManager.readString(path)) : fallback;
