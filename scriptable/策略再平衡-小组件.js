@@ -27,6 +27,11 @@
       return `¥${amount.toFixed(amount >= 1000 ? 0 : 2)}`;
     }
 
+    function totalMoney(value) {
+      const formatted = money(value);
+      return formatted.length > 12 ? compactMoney(value) : formatted;
+    }
+
     function addText(parent, text, font, color, lineLimit = 1) {
       const label = parent.addText(text);
       label.font = font;
@@ -143,28 +148,26 @@
     const widget = new ListWidget();
     widget.backgroundColor = new Color("#fbf8f1");
     widget.setPadding(13, 14, 12, 14);
+    widget.addSpacer();
 
     const heading = widget.addStack();
     heading.layoutHorizontally();
     addText(heading, strategy.name, Font.boldSystemFont(16), new Color("#22312d"));
     heading.addSpacer();
     addText(heading, `${stats.count} 只基金`, Font.systemFont(9), new Color("#77817c"));
-    widget.addSpacer(5);
+    widget.addSpacer(4);
 
-    const overview = widget.addStack();
-    overview.layoutHorizontally();
-    const amountBox = overview.addStack();
-    amountBox.layoutVertically();
-    addText(amountBox, "基金总额", Font.systemFont(8), new Color("#87908b"));
-    addText(amountBox, money(strategy.amount), Font.boldSystemFont(17), new Color("#283632"));
-    overview.addSpacer();
-    const positionBox = overview.addStack();
-    positionBox.layoutVertically();
+    addText(widget, "基金总额", Font.systemFont(8), new Color("#87908b"));
+    addText(widget, totalMoney(strategy.amount), Font.boldSystemFont(17), new Color("#283632"));
+
+    const position = widget.addStack();
+    position.layoutHorizontally();
     const positionText = Math.abs(deviation) <= 0.05 ? "仓位平衡" : `${deviation < 0 ? "低配" : "超配"} ${Math.abs(deviation).toFixed(1)}pp`;
     const positionColor = new Color(Math.abs(deviation) <= 0.05 ? "#578a7c" : deviation < 0 ? "#c58a2e" : "#c45e50");
-    addText(positionBox, positionText, Font.boldSystemFont(11), positionColor);
-    addText(positionBox, `当前 ${actualWeight.toFixed(1)}% / 目标 ${targetWeight.toFixed(1)}%`, Font.systemFont(7), new Color("#77817c"));
-    widget.addSpacer(7);
+    addText(position, positionText, Font.boldSystemFont(10), positionColor);
+    position.addSpacer();
+    addText(position, `${actualWeight.toFixed(1)}% → ${targetWeight.toFixed(1)}%`, Font.systemFont(8), new Color("#77817c"));
+    widget.addSpacer(8);
 
     const performance = widget.addStack();
     performance.layoutHorizontally();
@@ -187,8 +190,9 @@
     const transferText = Math.abs(adjustment) <= 0.005 ? "无需调仓" : `${adjustment > 0 ? "买入" : "卖出"} ${compactMoney(adjustment)}`;
     addText(transferBox, transferText, Font.boldSystemFont(12), new Color(adjustment > 0.005 ? "#c58a2e" : adjustment < -0.005 ? "#c45e50" : "#578a7c"));
 
-    widget.addSpacer();
+    widget.addSpacer(9);
     addText(widget, `自动更新 · ${REFRESH_HOURS} 小时缓存`, Font.systemFont(7), new Color("#9aa19d"));
+    widget.addSpacer();
     widget.refreshAfterDate = new Date(Date.now() + REFRESH_HOURS * 60 * 60 * 1000);
     Script.setWidget(widget);
     Script.complete();
