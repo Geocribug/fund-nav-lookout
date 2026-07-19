@@ -14,7 +14,7 @@
 
   function refreshHours() {
     const hour = new Date().getHours();
-    return hour >= 16 && hour < 22 ? 1 : OFF_HOURS_REFRESH_HOURS;
+    return hour >= 16 && hour <= 22 ? 1 : OFF_HOURS_REFRESH_HOURS;
   }
 
   const activeRefreshHours = refreshHours();
