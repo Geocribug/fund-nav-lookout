@@ -1,0 +1,4 @@
+/* Keep fund names readable on compact screens; valuation remains in strategy and plan details. */
+.fund-heading .valuation-chip {
+  display: none !important;
+}
