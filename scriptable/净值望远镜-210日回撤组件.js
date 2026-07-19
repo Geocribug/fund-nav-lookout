@@ -4,13 +4,20 @@
 
 (async () => {
   const TRADING_DAYS = 210;
-  const REFRESH_HOURS = 6;
+  const OFF_HOURS_REFRESH_HOURS = 6;
   const MAX_MEDIUM_FUNDS = 3;
   const MAX_LARGE_FUNDS = 7;
   const APP_URL = "https://geocribug.github.io/fund-nav-lookout/";
   const fileManager = FileManager.local();
   const configPath = fileManager.joinPath(fileManager.documentsDirectory(), "fund-nav-lookout-widget-config.json");
   const cachePath = fileManager.joinPath(fileManager.documentsDirectory(), "fund-nav-lookout-widget-cache.json");
+
+  function refreshHours() {
+    const hour = new Date().getHours();
+    return hour >= 16 && hour < 22 ? 1 : OFF_HOURS_REFRESH_HOURS;
+  }
+
+  const activeRefreshHours = refreshHours();
 
   function readJson(path, fallback) {
     try {
@@ -61,7 +68,7 @@
 
   async function getFundResult(fund, cache) {
     const cached = cache[fund.code];
-    const cacheStillFresh = cached && Date.now() - cached.fetchedAt < REFRESH_HOURS * 60 * 60 * 1000;
+    const cacheStillFresh = cached && Date.now() - cached.fetchedAt < activeRefreshHours * 60 * 60 * 1000;
     if (cacheStillFresh) return cached;
     try {
       const request = new Request(`https://fund.eastmoney.com/pingzhongdata/${fund.code}.js?v=${Date.now()}`);
@@ -162,8 +169,9 @@
 
   // 固定底部呼吸感，避免大型组件把剩余高度全部留白。
   widget.addSpacer(isLargeWidget ? 10 : 8);
-  addText(widget, `数据源：天天基金 · ${TRADING_DAYS} 个交易日`, Font.systemFont(isLargeWidget ? 9 : 9), new Color("#949b96"));
-  widget.refreshAfterDate = new Date(Date.now() + REFRESH_HOURS * 60 * 60 * 1000);
+  const refreshText = activeRefreshHours === 1 ? "收盘时段 · 1小时更新" : `${OFF_HOURS_REFRESH_HOURS}小时缓存`;
+  addText(widget, `数据源：天天基金 · ${TRADING_DAYS}日 · ${refreshText}`, Font.systemFont(isLargeWidget ? 9 : 9), new Color("#949b96"));
+  widget.refreshAfterDate = new Date(Date.now() + activeRefreshHours * 60 * 60 * 1000);
   Script.setWidget(widget);
   if (!config.runsInWidget) {
     if (isSmallWidget) await widget.presentSmall();
