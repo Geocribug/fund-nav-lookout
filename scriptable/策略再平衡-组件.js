@@ -165,7 +165,7 @@
     message.font = Font.systemFont(10);
     message.textColor = new Color("#68736e");
     message.lineLimit = 4;
-    widget.url = APP_URL;
+    widget.url = "https://geocribug.github.io/fund-nav-lookout/";
     Script.setWidget(widget);
     Script.complete();
   }
