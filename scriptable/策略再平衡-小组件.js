@@ -1,0 +1,159 @@
+// Scriptable 小号组件：一张卡显示一个策略组合。
+// 在小组件 Parameter 中填写策略名称或策略 ID，例如：美股科技。
+
+(() => {
+  try {
+    const fileManager = FileManager.local();
+    const configPath = fileManager.joinPath(fileManager.documentsDirectory(), "fund-nav-lookout-strategy-widget-config.json");
+
+    function readJson(path, fallback) {
+      try {
+        return fileManager.fileExists(path) ? JSON.parse(fileManager.readString(path)) : fallback;
+      } catch (_) {
+        return fallback;
+      }
+    }
+
+    function money(value) {
+      const amount = Math.abs(Number(value) || 0);
+      return `¥${amount.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}`;
+    }
+
+    function compactMoney(value) {
+      const amount = Math.abs(Number(value) || 0);
+      if (amount >= 10000) return `¥${(amount / 10000).toFixed(amount >= 100000 ? 1 : 2)}万`;
+      return `¥${amount.toFixed(amount >= 1000 ? 0 : 2)}`;
+    }
+
+    function addText(parent, text, font, color, lineLimit = 1) {
+      const label = parent.addText(text);
+      label.font = font;
+      label.textColor = color;
+      label.lineLimit = lineLimit;
+      label.minimumScaleFactor = 0.68;
+      return label;
+    }
+
+    function emptyWidget(message) {
+      const widget = new ListWidget();
+      widget.backgroundColor = new Color("#fbf8f1");
+      widget.setPadding(13, 13, 13, 13);
+      addText(widget, "策略组合", Font.boldSystemFont(15), new Color("#22312d"));
+      widget.addSpacer(7);
+      addText(widget, message, Font.systemFont(11), new Color("#68736e"), 4);
+      return widget;
+    }
+
+    function memberStats(members) {
+      const valid = (Array.isArray(members) ? members : [])
+        .filter((member) => Number.isFinite(Number(member?.dailyChange)));
+      if (!valid.length) return { count: Array.isArray(members) ? members.length : 0, dailyChange: null };
+      const amountTotal = valid.reduce((sum, member) => sum + Math.max(0, Number(member.amount) || 0), 0);
+      const dailyChange = amountTotal > 0
+        ? valid.reduce((sum, member) => sum + Number(member.dailyChange) * (Math.max(0, Number(member.amount) || 0) / amountTotal), 0)
+        : valid.reduce((sum, member) => sum + Number(member.dailyChange), 0) / valid.length;
+      return { count: Array.isArray(members) ? members.length : 0, dailyChange };
+    }
+
+    const storedConfig = readJson(configPath, null);
+    const allStrategies = Array.isArray(storedConfig?.strategies) ? storedConfig.strategies
+      .filter((item) => item && item.id && item.name && Number(item.targetWeight) > 0)
+      .map((item) => ({
+        ...item,
+        amount: Math.max(0, Number(item.amount) || 0),
+        targetWeight: Number(item.targetWeight),
+        members: Array.isArray(item.members) ? item.members : [],
+      })) : [];
+
+    if (!allStrategies.length) {
+      const widget = emptyWidget("请先运行“策略再平衡-配置”，导入网页配置并填写各策略当前金额。");
+      Script.setWidget(widget);
+      Script.complete();
+      return;
+    }
+
+    const parameter = String(args.widgetParameter || "").trim();
+    const strategy = parameter && parameter.toLowerCase() !== "all"
+      ? allStrategies.find((item) => item.id === parameter || item.name === parameter)
+      : allStrategies[0];
+    if (!strategy) {
+      const widget = emptyWidget(`未找到“${parameter}”。请在 Parameter 中填写准确的策略名称。`);
+      Script.setWidget(widget);
+      Script.complete();
+      return;
+    }
+
+    const totalAmount = allStrategies.reduce((sum, item) => sum + item.amount, 0);
+    const targetTotal = allStrategies.reduce((sum, item) => sum + item.targetWeight, 0);
+    if (totalAmount <= 0 || targetTotal <= 0) {
+      const widget = emptyWidget("请在“策略再平衡-配置”中为每个策略填写当前持有金额。");
+      Script.setWidget(widget);
+      Script.complete();
+      return;
+    }
+
+    const targetWeight = strategy.targetWeight / targetTotal * 100;
+    const actualWeight = strategy.amount / totalAmount * 100;
+    const deviation = actualWeight - targetWeight;
+    const finalTotal = Math.max(totalAmount, ...allStrategies.map((item) => item.amount / (item.targetWeight / targetTotal)));
+    const newCapital = Math.max(0, finalTotal * targetWeight / 100 - strategy.amount);
+    const adjustment = totalAmount * targetWeight / 100 - strategy.amount;
+    const stats = memberStats(strategy.members);
+
+    const widget = new ListWidget();
+    widget.backgroundColor = new Color("#fbf8f1");
+    widget.setPadding(12, 13, 11, 13);
+
+    const heading = widget.addStack();
+    heading.layoutHorizontally();
+    addText(heading, strategy.name, Font.boldSystemFont(15), new Color("#22312d"));
+    heading.addSpacer();
+    addText(heading, `${stats.count} 只基金`, Font.systemFont(9), new Color("#77817c"));
+    widget.addSpacer(3);
+
+    addText(widget, "基金总额", Font.systemFont(8), new Color("#87908b"));
+    addText(widget, money(strategy.amount), Font.boldSystemFont(17), new Color("#283632"));
+    addText(widget, `当前 ${actualWeight.toFixed(1)}% · 目标 ${targetWeight.toFixed(1)}% · ${deviation >= 0 ? "+" : ""}${deviation.toFixed(1)}pp`, Font.systemFont(8), new Color("#77817c"));
+    widget.addSpacer(5);
+
+    const performance = widget.addStack();
+    performance.layoutHorizontally();
+    addText(performance, "组合加权净值涨跌", Font.systemFont(9), new Color("#68736e"));
+    performance.addSpacer();
+    const performanceText = stats.dailyChange === null ? "待同步" : `${stats.dailyChange >= 0 ? "+" : ""}${stats.dailyChange.toFixed(2)}%`;
+    addText(performance, performanceText, Font.boldSystemFont(13), stats.dailyChange === null ? new Color("#87908b") : new Color(stats.dailyChange >= 0 ? "#578a7c" : "#c45e50"));
+    widget.addSpacer(7);
+
+    const plans = widget.addStack();
+    plans.layoutHorizontally();
+    const newCapitalBox = plans.addStack();
+    newCapitalBox.layoutVertically();
+    addText(newCapitalBox, "仅新增资金", Font.systemFont(8), new Color("#87908b"));
+    addText(newCapitalBox, newCapital > 0.005 ? compactMoney(newCapital) : "无需新增", Font.boldSystemFont(11), new Color("#c58a2e"));
+    plans.addSpacer();
+    const transferBox = plans.addStack();
+    transferBox.layoutVertically();
+    addText(transferBox, "不增资调仓", Font.systemFont(8), new Color("#87908b"));
+    const transferText = Math.abs(adjustment) <= 0.005 ? "无需调仓" : `${adjustment > 0 ? "买入" : "卖出"} ${compactMoney(adjustment)}`;
+    addText(transferBox, transferText, Font.boldSystemFont(11), new Color(adjustment > 0.005 ? "#c58a2e" : adjustment < -0.005 ? "#c45e50" : "#578a7c"));
+
+    widget.addSpacer();
+    addText(widget, "净值按最近一次网页导出加权", Font.systemFont(7), new Color("#9aa19d"));
+    Script.setWidget(widget);
+    Script.complete();
+  } catch (error) {
+    const widget = new ListWidget();
+    widget.backgroundColor = new Color("#fbf8f1");
+    widget.setPadding(13, 13, 13, 13);
+    const title = widget.addText("策略组合 · 配置异常");
+    title.font = Font.boldSystemFont(14);
+    title.textColor = new Color("#c45e50");
+    widget.addSpacer(7);
+    const message = widget.addText(error instanceof Error ? error.message : "无法读取策略配置");
+    message.font = Font.systemFont(10);
+    message.textColor = new Color("#68736e");
+    message.lineLimit = 4;
+    Script.setWidget(widget);
+    Script.complete();
+  }
+})();
