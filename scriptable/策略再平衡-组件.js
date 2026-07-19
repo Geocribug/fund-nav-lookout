@@ -1,7 +1,8 @@
 // Scriptable 中型组件：显示策略组合的当前占比、目标偏离与两种再平衡方案。
 // 参数留空或填写 all 显示前 3 个策略；也可填写策略名称并排序，例如：美股科技,核心固收。
 
-(async () => {
+(() => {
+  try {
   const MAX_MEDIUM_STRATEGIES = 3;
   const APP_URL = "https://geocribug.github.io/fund-nav-lookout/";
   const fileManager = FileManager.local();
@@ -149,7 +150,23 @@
   });
 
   widget.addSpacer(7);
-  addText(widget, `目标合计 ${targetTotal.toFixed(1)}% · 偏离阈值 ±2–5pp`, Font.systemFont(8), new Color("#949b96"));
+  addText(widget, `目标合计 ${targetTotal.toFixed(1)}% · 偏离阈值 ±2–5pp · v1.1`, Font.systemFont(8), new Color("#949b96"));
   Script.setWidget(widget);
   Script.complete();
+  } catch (error) {
+    const widget = new ListWidget();
+    widget.backgroundColor = new Color("#fbf8f1");
+    widget.setPadding(16, 16, 16, 16);
+    const title = widget.addText("策略再平衡 · 配置异常");
+    title.font = Font.boldSystemFont(14);
+    title.textColor = new Color("#c45e50");
+    widget.addSpacer(8);
+    const message = widget.addText(error instanceof Error ? error.message : "无法读取策略配置");
+    message.font = Font.systemFont(10);
+    message.textColor = new Color("#68736e");
+    message.lineLimit = 4;
+    widget.url = APP_URL;
+    Script.setWidget(widget);
+    Script.complete();
+  }
 })();
