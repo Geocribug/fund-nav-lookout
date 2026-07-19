@@ -16,20 +16,15 @@
       }
     }
 
-    function money(value) {
-      const amount = Math.abs(Number(value) || 0);
-      return `¥${amount.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}`;
-    }
-
     function compactMoney(value) {
       const amount = Math.abs(Number(value) || 0);
       if (amount >= 10000) return `¥${(amount / 10000).toFixed(amount >= 100000 ? 1 : 2)}万`;
       return `¥${amount.toFixed(amount >= 1000 ? 0 : 2)}`;
     }
 
-    function totalMoney(value) {
-      const formatted = money(value);
-      return formatted.length > 12 ? compactMoney(value) : formatted;
+    function headlineMoney(value) {
+      const amount = Math.abs(Number(value) || 0);
+      return amount >= 1000 ? `¥${(amount / 10000).toFixed(amount >= 100000 ? 1 : 2)}万` : `¥${amount.toFixed(2)}`;
     }
 
     function addText(parent, text, font, color, lineLimit = 1) {
@@ -160,7 +155,7 @@
     addText(widget, "基金总额", Font.systemFont(9), new Color("#87908b"));
     const amountLine = widget.addStack();
     amountLine.layoutHorizontally();
-    addText(amountLine, totalMoney(strategy.amount), Font.boldSystemFont(18), new Color("#283632"));
+    addText(amountLine, headlineMoney(strategy.amount), Font.boldSystemFont(16), new Color("#283632"));
     amountLine.addSpacer(5);
     const performanceText = stats.dailyChange === null ? "待同步" : `${stats.dailyChange >= 0 ? "+" : ""}${stats.dailyChange.toFixed(2)}%`;
     addText(amountLine, performanceText, Font.boldSystemFont(16), stats.dailyChange === null ? new Color("#87908b") : new Color(stats.dailyChange >= 0 ? "#578a7c" : "#c45e50"));
