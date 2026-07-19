@@ -91,7 +91,7 @@
   if (totalAmount <= 0 || targetTotal <= 0) {
     const widget = emptyWidget("请在“策略再平衡-配置”中为每个策略填写当前持有金额。金额支持两位小数。");
     Script.setWidget(widget);
-    if (!config.runsInWidget) await widget.presentLarge();
+    await showManualTip();
     Script.complete();
     return;
   }
@@ -162,6 +162,6 @@
   widget.addSpacer(7);
   addText(widget, `目标合计 ${targetTotal.toFixed(1)}% · 偏离阈值 ±2–5pp`, Font.systemFont(8), new Color("#949b96"));
   Script.setWidget(widget);
-  if (!config.runsInWidget) await widget.presentLarge();
+  await showManualTip();
   Script.complete();
 })();
