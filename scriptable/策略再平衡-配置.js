@@ -1,4 +1,4 @@
-// Scriptable 配置脚本：从网页导出的 JSON 读取策略名称与目标占比，
+// Scriptable 配置脚本：从网页导出的 JSON 读取策略、成员基金与净值摘要，
 // 并在本机记录每个策略组合的当前持有金额（保留两位小数）。
 
 (async () => {
@@ -41,7 +41,32 @@
     }
   }
 
-  function normalizeStrategies(items, previous) {
+  function dailyNavChange(item) {
+    const history = Array.isArray(item?.history) ? item.history : [];
+    const latest = Number(history[0]?.nav ?? item?.latestNav);
+    const previous = Number(history[1]?.nav);
+    if (!Number.isFinite(latest) || !Number.isFinite(previous) || previous <= 0) return null;
+    return Number((((latest / previous) - 1) * 100).toFixed(4));
+  }
+
+  function normalizeMembers(holdings, strategyId) {
+    return (Array.isArray(holdings) ? holdings : [])
+      .filter((item) => String(item?.strategyId || "") === strategyId)
+      .flatMap((item) => {
+        const code = String(item?.code || "").trim();
+        const name = String(item?.nickname || item?.name || "").trim();
+        if (!code || !name) return [];
+        return [{
+          code,
+          name: name.slice(0, 30),
+          amount: Math.max(0, Number(item?.amount) || 0),
+          dailyChange: dailyNavChange(item),
+          latestDate: String(item?.latestDate || "").slice(0, 10),
+        }];
+      });
+  }
+
+  function normalizeStrategies(items, holdings, previous) {
     const previousById = new Map((previous?.strategies || []).map((item) => [item.id, item.amount]));
     const previousByName = new Map((previous?.strategies || []).map((item) => [item.name, item.amount]));
     const seen = new Set();
@@ -52,7 +77,13 @@
       if (!id || !name || !Number.isFinite(targetWeight) || targetWeight <= 0 || seen.has(id)) return [];
       seen.add(id);
       const previousAmount = previousById.get(id) ?? previousByName.get(name) ?? 0;
-      return [{ id, name: name.slice(0, 30), targetWeight: Math.min(100, targetWeight), amount: Number(previousAmount) || 0 }];
+      return [{
+        id,
+        name: name.slice(0, 30),
+        targetWeight: Math.min(100, targetWeight),
+        amount: Number(previousAmount) || 0,
+        members: normalizeMembers(holdings, id),
+      }];
     });
   }
 
@@ -93,17 +124,17 @@
       const file = await DocumentPicker.openFile();
       if (!file) return;
       const payload = parseExport(fileManager.readString(file));
-      strategies = normalizeStrategies(payload.strategyGroups, existing);
+      strategies = normalizeStrategies(payload.strategyGroups, payload.holdings, existing);
       if (!strategies.length) throw new Error("没有识别到策略组合。请先在网页中建立策略组合并设置目标占比。");
     } else {
       strategies = existing.strategies.map((item) => ({ ...item }));
     }
 
     await editAmounts(strategies);
-    fileManager.writeString(configPath, JSON.stringify({ version: 1, updatedAt: new Date().toISOString(), strategies }, null, 2));
+    fileManager.writeString(configPath, JSON.stringify({ version: 2, updatedAt: new Date().toISOString(), strategies }, null, 2));
     const done = new Alert();
     done.title = "配置已保存";
-    done.message = `已保存 ${strategies.length} 个策略组合的目标占比与当前金额。金额仅保存在此 iPhone。`;
+    done.message = `已保存 ${strategies.length} 个策略组合的目标占比、当前金额与成员基金净值摘要。金额仅保存在此 iPhone。`;
     done.addAction("知道了");
     await done.presentAlert();
   } catch (error) {
