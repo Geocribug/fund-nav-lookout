@@ -197,9 +197,12 @@
 
     const position = widget.addStack();
     position.layoutHorizontally();
+    position.centerAlignContent();
     const positionText = Math.abs(deviation) <= 0.05 ? "仓位平衡" : `${deviation < 0 ? "低配" : "超配"} ${Math.abs(deviation).toFixed(1)}pp`;
     const positionColor = new Color(Math.abs(deviation) <= 0.05 ? "#578a7c" : deviation < 0 ? "#c58a2e" : "#c45e50");
-    addText(position, positionText, Font.boldSystemFont(11), positionColor);
+    const positionBox = position.addStack();
+    positionBox.size = new Size(PLAN_COLUMN_WIDTH, 0);
+    addLeftAlignedText(positionBox, positionText, Font.boldSystemFont(11), positionColor);
     position.addSpacer();
     const allocationBox = position.addStack();
     allocationBox.size = new Size(PLAN_COLUMN_WIDTH, 0);
