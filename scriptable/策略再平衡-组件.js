@@ -1,10 +1,9 @@
-// Scriptable 中型组件：显示策略组合的当前占比、目标偏离与两种再平衡方案。
+// Scriptable 中型组件稳定版：显示策略组合的当前占比、目标偏离与两种再平衡方案。
 // 参数留空或填写 all 显示前 3 个策略；也可填写策略名称并排序，例如：美股科技,核心固收。
 
 (() => {
   try {
   const MAX_MEDIUM_STRATEGIES = 3;
-  const APP_URL = "https://geocribug.github.io/fund-nav-lookout/";
   const fileManager = FileManager.local();
   const configPath = fileManager.joinPath(fileManager.documentsDirectory(), "fund-nav-lookout-strategy-widget-config.json");
 
@@ -55,7 +54,6 @@
     addText(widget, "策略再平衡", Font.boldSystemFont(16), new Color("#22312d"));
     widget.addSpacer(7);
     addText(widget, message, Font.systemFont(12), new Color("#68736e"), 3);
-    widget.url = APP_URL;
     return widget;
   }
 
@@ -107,7 +105,6 @@
   const widget = new ListWidget();
   widget.backgroundColor = new Color("#fbf8f1");
   widget.setPadding(12, 14, 11, 14);
-  widget.url = APP_URL;
 
   const heading = widget.addStack();
   heading.layoutHorizontally();
@@ -150,7 +147,7 @@
   });
 
   widget.addSpacer(7);
-  addText(widget, `目标合计 ${targetTotal.toFixed(1)}% · 偏离阈值 ±2–5pp · v1.1`, Font.systemFont(8), new Color("#949b96"));
+  addText(widget, `目标合计 ${targetTotal.toFixed(1)}% · 偏离阈值 ±2–5pp · 稳定版`, Font.systemFont(8), new Color("#949b96"));
   Script.setWidget(widget);
   Script.complete();
   } catch (error) {
@@ -165,7 +162,6 @@
     message.font = Font.systemFont(10);
     message.textColor = new Color("#68736e");
     message.lineLimit = 4;
-    widget.url = "https://geocribug.github.io/fund-nav-lookout/";
     Script.setWidget(widget);
     Script.complete();
   }
