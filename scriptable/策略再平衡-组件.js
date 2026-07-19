@@ -6,7 +6,6 @@
   const APP_URL = "https://geocribug.github.io/fund-nav-lookout/";
   const fileManager = FileManager.local();
   const configPath = fileManager.joinPath(fileManager.documentsDirectory(), "fund-nav-lookout-strategy-widget-config.json");
-  const runsInWidget = typeof config !== "undefined" && Boolean(config.runsInWidget);
 
   function readJson(path, fallback) {
     try {
@@ -59,14 +58,6 @@
     return widget;
   }
 
-  async function showManualTip() {
-    if (runsInWidget) return;
-    const alert = new Alert();
-    alert.title = "策略组件已准备";
-    alert.message = "请先运行“策略再平衡-配置”录入金额，再把本脚本添加为桌面的中型 Scriptable 小组件。组件本体无需手动预览。";
-    alert.addAction("知道了");
-    await alert.presentAlert();
-  }
 
   const storedConfig = readJson(configPath, null);
   const allStrategies = Array.isArray(storedConfig?.strategies) ? storedConfig.strategies
@@ -76,7 +67,6 @@
   if (!allStrategies.length) {
     const widget = emptyWidget("请先在 Scriptable 运行“策略再平衡-配置”脚本，导入网页配置并填写各策略当前金额。");
     Script.setWidget(widget);
-    await showManualTip();
     Script.complete();
     return;
   }
@@ -91,7 +81,6 @@
   if (totalAmount <= 0 || targetTotal <= 0) {
     const widget = emptyWidget("请在“策略再平衡-配置”中为每个策略填写当前持有金额。金额支持两位小数。");
     Script.setWidget(widget);
-    await showManualTip();
     Script.complete();
     return;
   }
@@ -162,6 +151,5 @@
   widget.addSpacer(7);
   addText(widget, `目标合计 ${targetTotal.toFixed(1)}% · 偏离阈值 ±2–5pp`, Font.systemFont(8), new Color("#949b96"));
   Script.setWidget(widget);
-  await showManualTip();
   Script.complete();
 })();
