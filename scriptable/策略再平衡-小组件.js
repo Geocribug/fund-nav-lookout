@@ -5,7 +5,6 @@
   try {
     const OFF_HOURS_REFRESH_HOURS = 6;
     const PLAN_COLUMN_WIDTH = 68;
-    const STATUS_COLUMN_WIDTH = 74;
     const fileManager = FileManager.local();
     const configPath = fileManager.joinPath(fileManager.documentsDirectory(), "fund-nav-lookout-strategy-widget-config.json");
     const cachePath = fileManager.joinPath(fileManager.documentsDirectory(), "fund-nav-lookout-strategy-widget-nav-cache.json");
@@ -173,13 +172,26 @@
     addText(heading, `${stats.count} 只基金`, Font.systemFont(10), new Color("#77817c"));
     widget.addSpacer(4);
 
-    addText(widget, "基金总额", Font.systemFont(9), new Color("#87908b"));
-    const amountLine = widget.addStack();
-    amountLine.layoutHorizontally();
-    addText(amountLine, headlineMoney(strategy.amount), Font.boldSystemFont(16), new Color("#283632"));
-    amountLine.addSpacer();
-    const performanceBox = amountLine.addStack();
-    performanceBox.size = new Size(STATUS_COLUMN_WIDTH, 0);
+    const metricLabels = widget.addStack();
+    metricLabels.layoutHorizontally();
+    const totalLabelBox = metricLabels.addStack();
+    totalLabelBox.size = new Size(PLAN_COLUMN_WIDTH, 0);
+    addCenteredText(totalLabelBox, "基金总额", Font.systemFont(9), new Color("#87908b"));
+    metricLabels.addSpacer();
+    const performanceLabelBox = metricLabels.addStack();
+    performanceLabelBox.size = new Size(PLAN_COLUMN_WIDTH, 0);
+    addLeftAlignedText(performanceLabelBox, "加权涨跌", Font.systemFont(9), new Color("#87908b"));
+
+    widget.addSpacer(2);
+    const metricValues = widget.addStack();
+    metricValues.layoutHorizontally();
+    metricValues.centerAlignContent();
+    const totalValueBox = metricValues.addStack();
+    totalValueBox.size = new Size(PLAN_COLUMN_WIDTH, 0);
+    addCenteredText(totalValueBox, headlineMoney(strategy.amount), Font.boldSystemFont(16), new Color("#283632"));
+    metricValues.addSpacer();
+    const performanceBox = metricValues.addStack();
+    performanceBox.size = new Size(PLAN_COLUMN_WIDTH, 0);
     const performanceText = stats.dailyChange === null ? "待同步" : `${stats.dailyChange >= 0 ? "+" : ""}${stats.dailyChange.toFixed(2)}%`;
     addCenteredText(performanceBox, performanceText, Font.boldSystemFont(16), stats.dailyChange === null ? new Color("#87908b") : new Color(stats.dailyChange >= 0 ? "#578a7c" : "#c45e50"));
 
@@ -190,7 +202,7 @@
     addText(position, positionText, Font.boldSystemFont(11), positionColor);
     position.addSpacer();
     const allocationBox = position.addStack();
-    allocationBox.size = new Size(STATUS_COLUMN_WIDTH, 0);
+    allocationBox.size = new Size(PLAN_COLUMN_WIDTH, 0);
     addCenteredText(allocationBox, `${actualWeight.toFixed(1)}% → ${targetWeight.toFixed(1)}%`, Font.systemFont(9), new Color("#77817c"));
     widget.addSpacer(11);
 
