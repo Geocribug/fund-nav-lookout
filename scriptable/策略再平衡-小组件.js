@@ -187,11 +187,11 @@
     planLabels.layoutHorizontally();
     const newCapitalLabelBox = planLabels.addStack();
     newCapitalLabelBox.size = new Size(PLAN_COLUMN_WIDTH, 0);
-    addCenteredText(newCapitalLabelBox, "增资补足", Font.systemFont(9), new Color("#87908b"));
+    addText(newCapitalLabelBox, "增资补足", Font.systemFont(9), new Color("#87908b"));
     planLabels.addSpacer();
     const transferLabelBox = planLabels.addStack();
     transferLabelBox.size = new Size(PLAN_COLUMN_WIDTH, 0);
-    addCenteredText(transferLabelBox, "内部调仓", Font.systemFont(9), new Color("#87908b"));
+    addText(transferLabelBox, "内部调仓", Font.systemFont(9), new Color("#87908b"));
 
     widget.addSpacer(2);
     const planValues = widget.addStack();
