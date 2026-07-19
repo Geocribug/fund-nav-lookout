@@ -183,22 +183,28 @@
     addText(position, `${actualWeight.toFixed(1)}% → ${targetWeight.toFixed(1)}%`, Font.systemFont(9), new Color("#77817c"));
     widget.addSpacer(11);
 
-    const plans = widget.addStack();
-    plans.layoutHorizontally();
-    const newCapitalBox = plans.addStack();
-    newCapitalBox.size = new Size(PLAN_COLUMN_WIDTH, 0);
-    newCapitalBox.layoutVertically();
-    newCapitalBox.centerAlignContent();
-    addCenteredText(newCapitalBox, "增资补足", Font.systemFont(9), new Color("#87908b"));
-    addCenteredText(newCapitalBox, newCapital > 0.005 ? compactMoney(newCapital) : "无需新增", Font.boldSystemFont(13), new Color("#c58a2e"));
-    plans.addSpacer();
-    const transferBox = plans.addStack();
-    transferBox.size = new Size(PLAN_COLUMN_WIDTH, 0);
-    transferBox.layoutVertically();
-    transferBox.centerAlignContent();
-    addCenteredText(transferBox, "内部调仓", Font.systemFont(9), new Color("#87908b"));
+    const planLabels = widget.addStack();
+    planLabels.layoutHorizontally();
+    const newCapitalLabelBox = planLabels.addStack();
+    newCapitalLabelBox.size = new Size(PLAN_COLUMN_WIDTH, 0);
+    addCenteredText(newCapitalLabelBox, "增资补足", Font.systemFont(9), new Color("#87908b"));
+    planLabels.addSpacer();
+    const transferLabelBox = planLabels.addStack();
+    transferLabelBox.size = new Size(PLAN_COLUMN_WIDTH, 0);
+    addCenteredText(transferLabelBox, "内部调仓", Font.systemFont(9), new Color("#87908b"));
+
+    widget.addSpacer(2);
+    const planValues = widget.addStack();
+    planValues.layoutHorizontally();
+    planValues.centerAlignContent();
+    const newCapitalValueBox = planValues.addStack();
+    newCapitalValueBox.size = new Size(PLAN_COLUMN_WIDTH, 0);
+    addCenteredText(newCapitalValueBox, newCapital > 0.005 ? compactMoney(newCapital) : "无需新增", Font.boldSystemFont(13), new Color("#c58a2e"));
+    planValues.addSpacer();
+    const transferValueBox = planValues.addStack();
+    transferValueBox.size = new Size(PLAN_COLUMN_WIDTH, 0);
     const transferText = Math.abs(adjustment) <= 0.005 ? "无需调仓" : `${adjustment > 0 ? "买入" : "卖出"} ${compactMoney(adjustment)}`;
-    addCenteredText(transferBox, transferText, Font.boldSystemFont(13), new Color(adjustment > 0.005 ? "#c58a2e" : adjustment < -0.005 ? "#c45e50" : "#578a7c"));
+    addCenteredText(transferValueBox, transferText, Font.boldSystemFont(13), new Color(adjustment > 0.005 ? "#c58a2e" : adjustment < -0.005 ? "#c45e50" : "#578a7c"));
 
     widget.addSpacer(9);
     addText(widget, activeRefreshHours === 1 ? "收盘更新时段 · 每小时尝试" : `自动更新 · ${OFF_HOURS_REFRESH_HOURS} 小时缓存`, Font.systemFont(7), new Color("#9aa19d"));
