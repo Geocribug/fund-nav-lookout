@@ -6,6 +6,7 @@
   const APP_URL = "https://geocribug.github.io/fund-nav-lookout/";
   const fileManager = FileManager.local();
   const configPath = fileManager.joinPath(fileManager.documentsDirectory(), "fund-nav-lookout-strategy-widget-config.json");
+  const runsInWidget = typeof config !== "undefined" && Boolean(config.runsInWidget);
 
   function readJson(path, fallback) {
     try {
@@ -58,6 +59,15 @@
     return widget;
   }
 
+  async function showManualTip() {
+    if (runsInWidget) return;
+    const alert = new Alert();
+    alert.title = "策略组件已准备";
+    alert.message = "请先运行“策略再平衡-配置”录入金额，再把本脚本添加为桌面的中型 Scriptable 小组件。组件本体无需手动预览。";
+    alert.addAction("知道了");
+    await alert.presentAlert();
+  }
+
   const storedConfig = readJson(configPath, null);
   const allStrategies = Array.isArray(storedConfig?.strategies) ? storedConfig.strategies
     .filter((item) => item && item.id && item.name && Number(item.targetWeight) > 0)
@@ -66,7 +76,7 @@
   if (!allStrategies.length) {
     const widget = emptyWidget("请先在 Scriptable 运行“策略再平衡-配置”脚本，导入网页配置并填写各策略当前金额。");
     Script.setWidget(widget);
-    if (!config.runsInWidget) await widget.presentMedium();
+    await showManualTip();
     Script.complete();
     return;
   }
