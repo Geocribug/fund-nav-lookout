@@ -31,6 +31,10 @@
     return new Date(timestamp).toISOString().slice(5, 10);
   }
 
+  function naturalDaysSince(highDate, latestDate) {
+    return Math.max(0, Math.round((latestDate - highDate) / (24 * 60 * 60 * 1000)));
+  }
+
   function calculateDrawdown(code, preferredName, source) {
     const name = source.match(/fS_name\s*=\s*"([^"]+)"/)?.[1] || preferredName || code;
     const raw = source.match(/Data_netWorthTrend\s*=\s*(\[[\s\S]*?\]);/)?.[1];
@@ -42,8 +46,15 @@
     const latest = history.at(-1);
     const high = history.reduce((previous, item) => item.y > previous.y ? item : previous);
     return {
-      code, name, latestNav: latest.y, latestDate: latest.x, highNav: high.y, highDate: high.x,
-      drawdown: Math.max(0, ((high.y - latest.y) / high.y) * 100), fetchedAt: Date.now(),
+      code,
+      name,
+      latestNav: latest.y,
+      latestDate: latest.x,
+      highNav: high.y,
+      highDate: high.x,
+      highElapsedDays: naturalDaysSince(high.x, latest.x),
+      drawdown: Math.max(0, ((high.y - latest.y) / high.y) * 100),
+      fetchedAt: Date.now(),
     };
   }
 
@@ -141,7 +152,8 @@
     right.layoutVertically();
     right.centerAlignContent();
     addText(right, `−${fund.drawdown.toFixed(2)}%`, Font.boldSystemFont(config.widgetFamily === "small" ? 24 : 15), colorFor(fund.drawdown));
-    addText(right, `高点 ${fund.highNav.toFixed(4)}`, Font.systemFont(9), new Color("#77817c"));
+    const elapsedDays = Number.isFinite(fund.highElapsedDays) ? fund.highElapsedDays : naturalDaysSince(fund.highDate, fund.latestDate);
+    addText(right, `高点 ${fund.highNav.toFixed(4)} · ${elapsedDays}天前`, Font.systemFont(9), new Color("#77817c"));
   });
 
   widget.addSpacer();
