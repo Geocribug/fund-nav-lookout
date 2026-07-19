@@ -1,10 +1,12 @@
 // Scriptable 小号组件：一张卡显示一个策略组合。
 // 在小组件 Parameter 中填写策略名称或策略 ID，例如：美股科技。
 
-(() => {
+(async () => {
   try {
+    const REFRESH_HOURS = 6;
     const fileManager = FileManager.local();
     const configPath = fileManager.joinPath(fileManager.documentsDirectory(), "fund-nav-lookout-strategy-widget-config.json");
+    const cachePath = fileManager.joinPath(fileManager.documentsDirectory(), "fund-nav-lookout-strategy-widget-nav-cache.json");
 
     function readJson(path, fallback) {
       try {
@@ -42,6 +44,41 @@
       widget.addSpacer(7);
       addText(widget, message, Font.systemFont(11), new Color("#68736e"), 4);
       return widget;
+    }
+
+    function latestDailyChange(member, source) {
+      const raw = source.match(/Data_netWorthTrend\s*=\s*(\[[\s\S]*?\]);/)?.[1];
+      if (!raw) throw new Error("未找到净值历史");
+      const history = JSON.parse(raw).filter((item) => Number.isFinite(item.x) && Number.isFinite(item.y));
+      if (history.length < 2) throw new Error("净值历史不足");
+      const latest = history.at(-1);
+      const previous = history.at(-2);
+      if (!latest || !previous || previous.y <= 0) throw new Error("最新净值无效");
+      return {
+        ...member,
+        dailyChange: ((latest.y / previous.y) - 1) * 100,
+        latestDate: new Date(latest.x).toISOString().slice(0, 10),
+        fetchedAt: Date.now(),
+      };
+    }
+
+    async function getMemberDailyChange(member, cache) {
+      const cached = cache[member.code];
+      const cacheStillFresh = cached && Date.now() - cached.fetchedAt < REFRESH_HOURS * 60 * 60 * 1000;
+      if (cacheStillFresh) return { ...member, ...cached };
+      try {
+        const request = new Request(`https://fund.eastmoney.com/pingzhongdata/${member.code}.js?v=${Date.now()}`);
+        request.timeoutInterval = 12;
+        const result = latestDailyChange(member, await request.loadString());
+        cache[member.code] = {
+          dailyChange: result.dailyChange,
+          latestDate: result.latestDate,
+          fetchedAt: result.fetchedAt,
+        };
+        return result;
+      } catch (_) {
+        return cached ? { ...member, ...cached } : member;
+      }
     }
 
     function memberStats(members) {
@@ -98,7 +135,10 @@
     const finalTotal = Math.max(totalAmount, ...allStrategies.map((item) => item.amount / (item.targetWeight / targetTotal)));
     const newCapital = Math.max(0, finalTotal * targetWeight / 100 - strategy.amount);
     const adjustment = totalAmount * targetWeight / 100 - strategy.amount;
-    const stats = memberStats(strategy.members);
+    const cache = readJson(cachePath, {});
+    const liveMembers = await Promise.all(strategy.members.map((member) => getMemberDailyChange(member, cache)));
+    fileManager.writeString(cachePath, JSON.stringify(cache));
+    const stats = memberStats(liveMembers);
 
     const widget = new ListWidget();
     widget.backgroundColor = new Color("#fbf8f1");
@@ -138,7 +178,8 @@
     addText(transferBox, transferText, Font.boldSystemFont(11), new Color(adjustment > 0.005 ? "#c58a2e" : adjustment < -0.005 ? "#c45e50" : "#578a7c"));
 
     widget.addSpacer();
-    addText(widget, "净值按最近一次网页导出加权", Font.systemFont(7), new Color("#9aa19d"));
+    addText(widget, `净值自动更新 · ${REFRESH_HOURS} 小时缓存`, Font.systemFont(7), new Color("#9aa19d"));
+    widget.refreshAfterDate = new Date(Date.now() + REFRESH_HOURS * 60 * 60 * 1000);
     Script.setWidget(widget);
     Script.complete();
   } catch (error) {
