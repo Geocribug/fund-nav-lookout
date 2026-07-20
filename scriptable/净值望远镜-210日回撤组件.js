@@ -4,6 +4,8 @@
 
 (async () => {
   const TRADING_DAYS = 210;
+  const CACHE_VERSION = 2;
+  const CLOSE_SESSION_REFRESH_MINUTES = 15;
   const OFF_HOURS_REFRESH_HOURS = 6;
   const MAX_MEDIUM_FUNDS = 3;
   const MAX_LARGE_FUNDS = 7;
@@ -12,12 +14,25 @@
   const configPath = fileManager.joinPath(fileManager.documentsDirectory(), "fund-nav-lookout-widget-config.json");
   const cachePath = fileManager.joinPath(fileManager.documentsDirectory(), "fund-nav-lookout-widget-cache.json");
 
-  function refreshHours() {
-    const hour = new Date().getHours();
-    return hour >= 16 && hour <= 22 ? 1 : OFF_HOURS_REFRESH_HOURS;
+  function chinaClock(timestamp = Date.now()) {
+    return new Date(Number(timestamp) + 8 * 60 * 60 * 1000);
   }
 
-  const activeRefreshHours = refreshHours();
+  function isChinaTradingWeekday(timestamp = Date.now()) {
+    const day = chinaClock(timestamp).getUTCDay();
+    return day >= 1 && day <= 5;
+  }
+
+  function refreshIntervalMs() {
+    const hour = chinaClock().getUTCHours();
+    if (isChinaTradingWeekday() && hour >= 16 && hour <= 22) {
+      return CLOSE_SESSION_REFRESH_MINUTES * 60 * 1000;
+    }
+    return OFF_HOURS_REFRESH_HOURS * 60 * 60 * 1000;
+  }
+
+  const activeRefreshIntervalMs = refreshIntervalMs();
+  const isCloseSession = activeRefreshIntervalMs === CLOSE_SESSION_REFRESH_MINUTES * 60 * 1000;
 
   function readJson(path, fallback) {
     try {
@@ -36,7 +51,8 @@
   }
 
   function dateText(timestamp) {
-    return new Date(timestamp).toISOString().slice(5, 10);
+    const date = chinaClock(timestamp);
+    return `${String(date.getUTCMonth() + 1).padStart(2, "0")}-${String(date.getUTCDate()).padStart(2, "0")}`;
   }
 
   function naturalDaysSince(highDate, latestDate) {
@@ -63,12 +79,15 @@
       highElapsedDays: naturalDaysSince(high.x, latest.x),
       drawdown: Math.max(0, ((high.y - latest.y) / high.y) * 100),
       fetchedAt: Date.now(),
+      cacheVersion: CACHE_VERSION,
     };
   }
 
   async function getFundResult(fund, cache) {
     const cached = cache[fund.code];
-    const cacheStillFresh = cached && Date.now() - cached.fetchedAt < activeRefreshHours * 60 * 60 * 1000;
+    const cacheStillFresh = cached
+      && cached.cacheVersion === CACHE_VERSION
+      && Date.now() - cached.fetchedAt < activeRefreshIntervalMs;
     if (cacheStillFresh) return cached;
     try {
       const request = new Request(`https://fund.eastmoney.com/pingzhongdata/${fund.code}.js?v=${Date.now()}`);
@@ -169,9 +188,9 @@
 
   // 固定底部呼吸感，避免大型组件把剩余高度全部留白。
   widget.addSpacer(isLargeWidget ? 10 : 8);
-  const refreshText = activeRefreshHours === 1 ? "收盘时段 · 1小时更新" : `${OFF_HOURS_REFRESH_HOURS}小时缓存`;
+  const refreshText = isCloseSession ? `收盘时段 · ${CLOSE_SESSION_REFRESH_MINUTES}分尝试` : `${OFF_HOURS_REFRESH_HOURS}小时缓存`;
   addText(widget, `数据源：天天基金 · ${TRADING_DAYS}日 · ${refreshText}`, Font.systemFont(isLargeWidget ? 9 : 9), new Color("#949b96"));
-  widget.refreshAfterDate = new Date(Date.now() + activeRefreshHours * 60 * 60 * 1000);
+  widget.refreshAfterDate = new Date(Date.now() + activeRefreshIntervalMs);
   Script.setWidget(widget);
   if (!config.runsInWidget) {
     if (isSmallWidget) await widget.presentSmall();
