@@ -188,7 +188,7 @@
 
   // 固定底部呼吸感，避免大型组件把剩余高度全部留白。
   widget.addSpacer(isLargeWidget ? 10 : 8);
-  const refreshText = isCloseSession ? `收盘时段 · ${CLOSE_SESSION_REFRESH_MINUTES}分尝试` : `${OFF_HOURS_REFRESH_HOURS}小时缓存`;
+  const refreshText = isCloseSession ? `收盘时段 · ${CLOSE_SESSION_REFRESH_MINUTES}分钟缓存` : `${OFF_HOURS_REFRESH_HOURS}小时缓存`;
   addText(widget, `数据源：天天基金 · ${TRADING_DAYS}日 · ${refreshText}`, Font.systemFont(isLargeWidget ? 9 : 9), new Color("#949b96"));
   widget.refreshAfterDate = new Date(Date.now() + activeRefreshIntervalMs);
   Script.setWidget(widget);
