@@ -7,6 +7,7 @@
     const CLOSE_SESSION_REFRESH_MINUTES = 15;
     const OFF_HOURS_REFRESH_HOURS = 6;
     const PLAN_COLUMN_WIDTH = 68;
+    const APP_URL = "https://geocribug.github.io/fund-nav-lookout/";
     const fileManager = FileManager.local();
     const configPath = fileManager.joinPath(fileManager.documentsDirectory(), "fund-nav-lookout-strategy-widget-config.json");
     const cachePath = fileManager.joinPath(fileManager.documentsDirectory(), "fund-nav-lookout-strategy-widget-nav-cache.json");
@@ -80,6 +81,7 @@
       const widget = new ListWidget();
       widget.backgroundColor = new Color("#fbf8f1");
       widget.setPadding(13, 13, 13, 13);
+      widget.url = APP_URL;
       addText(widget, "策略组合", Font.boldSystemFont(15), new Color("#22312d"));
       widget.addSpacer(7);
       addText(widget, message, Font.systemFont(11), new Color("#68736e"), 4);
@@ -187,6 +189,7 @@
     const widget = new ListWidget();
     widget.backgroundColor = new Color("#fbf8f1");
     widget.setPadding(13, 14, 12, 14);
+    widget.url = APP_URL;
     widget.addSpacer();
 
     const heading = widget.addStack();
@@ -257,7 +260,7 @@
     addCenteredText(transferValueBox, transferText, Font.boldSystemFont(13), new Color(adjustment > 0.005 ? "#c58a2e" : adjustment < -0.005 ? "#c45e50" : "#578a7c"));
 
     widget.addSpacer(9);
-    addText(widget, isCloseSession ? `收盘更新时段 · ${CLOSE_SESSION_REFRESH_MINUTES} 分钟尝试` : `自动更新 · ${OFF_HOURS_REFRESH_HOURS} 小时缓存`, Font.systemFont(7), new Color("#9aa19d"));
+    addText(widget, isCloseSession ? `收盘更新时段 · ${CLOSE_SESSION_REFRESH_MINUTES} 分钟缓存` : `自动更新 · ${OFF_HOURS_REFRESH_HOURS} 小时缓存`, Font.systemFont(7), new Color("#9aa19d"));
     widget.addSpacer();
     widget.refreshAfterDate = new Date(Date.now() + activeRefreshIntervalMs);
     Script.setWidget(widget);
@@ -266,6 +269,7 @@
     const widget = new ListWidget();
     widget.backgroundColor = new Color("#fbf8f1");
     widget.setPadding(13, 13, 13, 13);
+    widget.url = "https://geocribug.github.io/fund-nav-lookout/";
     const title = widget.addText("策略组合 · 配置异常");
     title.font = Font.boldSystemFont(14);
     title.textColor = new Color("#c45e50");
