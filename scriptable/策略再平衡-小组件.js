@@ -3,18 +3,38 @@
 
 (async () => {
   try {
+    const CACHE_VERSION = 2;
+    const CLOSE_SESSION_REFRESH_MINUTES = 15;
     const OFF_HOURS_REFRESH_HOURS = 6;
     const PLAN_COLUMN_WIDTH = 68;
     const fileManager = FileManager.local();
     const configPath = fileManager.joinPath(fileManager.documentsDirectory(), "fund-nav-lookout-strategy-widget-config.json");
     const cachePath = fileManager.joinPath(fileManager.documentsDirectory(), "fund-nav-lookout-strategy-widget-nav-cache.json");
 
-    function refreshHours() {
-      const hour = new Date().getHours();
-      return hour >= 16 && hour <= 22 ? 1 : OFF_HOURS_REFRESH_HOURS;
+    function chinaClock(timestamp = Date.now()) {
+      return new Date(Number(timestamp) + 8 * 60 * 60 * 1000);
     }
 
-    const activeRefreshHours = refreshHours();
+    function isChinaTradingWeekday(timestamp = Date.now()) {
+      const day = chinaClock(timestamp).getUTCDay();
+      return day >= 1 && day <= 5;
+    }
+
+    function refreshIntervalMs() {
+      const hour = chinaClock().getUTCHours();
+      if (isChinaTradingWeekday() && hour >= 16 && hour <= 22) {
+        return CLOSE_SESSION_REFRESH_MINUTES * 60 * 1000;
+      }
+      return OFF_HOURS_REFRESH_HOURS * 60 * 60 * 1000;
+    }
+
+    function chinaDateText(timestamp) {
+      const date = chinaClock(timestamp);
+      return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, "0")}-${String(date.getUTCDate()).padStart(2, "0")}`;
+    }
+
+    const activeRefreshIntervalMs = refreshIntervalMs();
+    const isCloseSession = activeRefreshIntervalMs === CLOSE_SESSION_REFRESH_MINUTES * 60 * 1000;
 
     function readJson(path, fallback) {
       try {
@@ -77,14 +97,17 @@
       return {
         ...member,
         dailyChange: ((latest.y / previous.y) - 1) * 100,
-        latestDate: new Date(latest.x).toISOString().slice(0, 10),
+        latestDate: chinaDateText(latest.x),
         fetchedAt: Date.now(),
+        cacheVersion: CACHE_VERSION,
       };
     }
 
     async function getMemberDailyChange(member, cache) {
       const cached = cache[member.code];
-      const cacheStillFresh = cached && Date.now() - cached.fetchedAt < activeRefreshHours * 60 * 60 * 1000;
+      const cacheStillFresh = cached
+        && cached.cacheVersion === CACHE_VERSION
+        && Date.now() - cached.fetchedAt < activeRefreshIntervalMs;
       if (cacheStillFresh) return { ...member, ...cached };
       try {
         const request = new Request(`https://fund.eastmoney.com/pingzhongdata/${member.code}.js?v=${Date.now()}`);
@@ -94,6 +117,7 @@
           dailyChange: result.dailyChange,
           latestDate: result.latestDate,
           fetchedAt: result.fetchedAt,
+          cacheVersion: CACHE_VERSION,
         };
         return result;
       } catch (_) {
@@ -233,9 +257,9 @@
     addCenteredText(transferValueBox, transferText, Font.boldSystemFont(13), new Color(adjustment > 0.005 ? "#c58a2e" : adjustment < -0.005 ? "#c45e50" : "#578a7c"));
 
     widget.addSpacer(9);
-    addText(widget, activeRefreshHours === 1 ? "收盘更新时段 · 每小时尝试" : `自动更新 · ${OFF_HOURS_REFRESH_HOURS} 小时缓存`, Font.systemFont(7), new Color("#9aa19d"));
+    addText(widget, isCloseSession ? `收盘更新时段 · ${CLOSE_SESSION_REFRESH_MINUTES} 分钟尝试` : `自动更新 · ${OFF_HOURS_REFRESH_HOURS} 小时缓存`, Font.systemFont(7), new Color("#9aa19d"));
     widget.addSpacer();
-    widget.refreshAfterDate = new Date(Date.now() + activeRefreshHours * 60 * 60 * 1000);
+    widget.refreshAfterDate = new Date(Date.now() + activeRefreshIntervalMs);
     Script.setWidget(widget);
     Script.complete();
   } catch (error) {
